@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
@@ -15,6 +16,8 @@ namespace AElf.Kernel.SmartContract.Application
         Task<Address> GetAddressByContractNameAsync(IChainContext chainContext, Hash name);
         Task<SmartContractAddressDto> GetSmartContractAddressAsync(IChainContext chainContext, Hash name);
         Task SetSmartContractAddressAsync(IBlockIndex blockIndex, Hash contractName, Address address);
+        
+        void SetAddress(Hash name, Address address);
 
         Address GetZeroSmartContractAddress();
 
@@ -43,13 +46,14 @@ namespace AElf.Kernel.SmartContract.Application
             _smartContractAddressNameProviders = smartContractAddressNameProviders;
             _blockchainService = blockchainService;
         }
+        
+        private readonly ConcurrentDictionary<Hash, Address> _hashToAddressMap =
+            new ConcurrentDictionary<Hash, Address>();
 
-        public async Task<Address> GetAddressByContractNameAsync(IChainContext chainContext, Hash name)
+        public Task<Address> GetAddressByContractNameAsync(IChainContext chainContext, Hash name)
         {
-            var smartContractAddress = await _smartContractAddressProvider.GetSmartContractAddressAsync(chainContext, name);
-            var address = smartContractAddress?.Address;
-            if (address == null) address = await GetSmartContractAddressFromStateAsync(chainContext, name);
-            return address;
+            _hashToAddressMap.TryGetValue(name, out var address);
+            return Task.FromResult(address);
         }
 
         public async Task<SmartContractAddressDto> GetSmartContractAddressAsync(IChainContext chainContext, Hash name)
@@ -89,6 +93,11 @@ namespace AElf.Kernel.SmartContract.Application
         public virtual async Task SetSmartContractAddressAsync(IBlockIndex blockIndex, Hash contractName, Address address)
         {
             await _smartContractAddressProvider.SetSmartContractAddressAsync(blockIndex, contractName, address);
+        }
+
+        public void SetAddress(Hash name, Address address)
+        {
+            _hashToAddressMap.TryAdd(name, address);
         }
 
         public Address GetZeroSmartContractAddress()
