@@ -12,17 +12,16 @@ namespace AElf.CrossChain.Application
 {
     internal class CrossChainTransactionGenerator : ISystemTransactionGenerator
     {
-        private readonly ICrossChainIndexingDataService _crossChainIndexingDataService;
-
+        private readonly ICrossChainService _crossChainService;
         private readonly ISmartContractAddressService _smartContractAddressService;
 
         public ILogger<CrossChainTransactionGenerator> Logger { get; set; }
 
-        public CrossChainTransactionGenerator(ICrossChainIndexingDataService crossChainIndexingDataService,
-            ISmartContractAddressService smartContractAddressService)
+        public CrossChainTransactionGenerator(
+            ISmartContractAddressService smartContractAddressService, ICrossChainService crossChainService)
         {
-            _crossChainIndexingDataService = crossChainIndexingDataService;
             _smartContractAddressService = smartContractAddressService;
+            _crossChainService = crossChainService;
         }
 
         private async Task<List<Transaction>> GenerateCrossChainIndexingTransactionAsync(Address from,
@@ -32,15 +31,15 @@ namespace AElf.CrossChain.Application
             var generatedTransactions = new List<Transaction>();
 
             var crossChainTransactionInput =
-                await _crossChainIndexingDataService.GetCrossChainTransactionInputForNextMiningAsync(previousBlockHash,
-                    refBlockNumber);
+                await _crossChainService.GetCrossChainTransactionInputForNextMiningAsync(previousBlockHash,
+                    refBlockNumber, from);
 
             if (crossChainTransactionInput == null)
             {
                 return generatedTransactions;
             }
 
-            var previousBlockPrefix = previousBlockHash.Value.Take(4).ToArray();
+            var previousBlockPrefix = BlockHelper.GetRefBlockPrefix(previousBlockHash).ToByteArray();
             generatedTransactions.Add(GenerateNotSignedTransaction(from, crossChainTransactionInput.MethodName,
                 refBlockNumber, previousBlockPrefix, crossChainTransactionInput.Value));
 
@@ -79,7 +78,5 @@ namespace AElf.CrossChain.Application
                 Params = bytes,
             };
         }
-
-        
     }
 }

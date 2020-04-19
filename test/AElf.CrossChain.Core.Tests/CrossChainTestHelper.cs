@@ -32,10 +32,10 @@ namespace AElf.CrossChain
             _indexedCrossChainBlockData.Add(height, crossChainBlockData);
         }
 
-        internal void AddFakePendingCrossChainIndexingProposal(GetPendingCrossChainIndexingProposalOutput pendingCrossChainIndexingProposalOutput)
-        {
-            _pendingCrossChainIndexingProposalOutput = pendingCrossChainIndexingProposalOutput;
-        }
+        // internal void AddFakePendingCrossChainIndexingProposal(GetPendingCrossChainIndexingProposalOutput pendingCrossChainIndexingProposalOutput)
+        // {
+        //     _pendingCrossChainIndexingProposalOutput = pendingCrossChainIndexingProposalOutput;
+        // }
 
         public TransactionTrace CreateFakeTransactionTrace(Transaction transaction)
         {
@@ -131,9 +131,9 @@ namespace AElf.CrossChain
             return new byte[0];
         }
         
-        public void SetFakeLibHeight(long height)
-        {
-            FakeLibHeight = height;
-        }
+        // public void SetFakeLibHeight(long height)
+        // {
+        //     FakeLibHeight = height;
+        // }
     }
 }

@@ -7,5 +7,14 @@
     <ItemGroup>
       <ProjectReference Include="..\AElf.CrossChain.Core\AElf.CrossChain.Core.csproj" />
     </ItemGroup>
+    
+    <ItemGroup>
+        <ContractStub Include="..\..\protobuf\cross_chain_contract.proto">
+            <Link>Protobuf\Proto\cross_chain_contract.proto</Link>
+        </ContractStub>
+        <ContractStub Include="..\..\protobuf\acs1.proto">
+            <Link>Protobuf\Proto\acs1.proto</Link>
+        </ContractStub>
+    </ItemGroup>
 
 </Project>

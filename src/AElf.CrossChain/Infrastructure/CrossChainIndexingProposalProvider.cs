@@ -3,19 +3,19 @@ using System.Linq;
 using AElf.Types;
 using Volo.Abp.DependencyInjection;
 
-namespace AElf.CrossChain.Indexing.Infrastructure
+namespace AElf.CrossChain.Infrastructure
 {
-    internal class TransactionInputForBlockMiningDataProvider : ITransactionInputForBlockMiningDataProvider, ISingletonDependency
+    internal class CrossChainIndexingProposalProvider : ICrossChainIndexingProposalProvider, ISingletonDependency
     {
-        private readonly Dictionary<Hash, CrossChainTransactionInput> _indexedCrossChainBlockData =
-            new Dictionary<Hash, CrossChainTransactionInput>();
+        private readonly Dictionary<Hash, CrossChainIndexingPendingProposal> _indexedCrossChainBlockData =
+            new Dictionary<Hash, CrossChainIndexingPendingProposal>();
 
-        public void AddTransactionInputForBlockMining(Hash blockHash, CrossChainTransactionInput crossChainTransactionInput)
+        public void AddCrossChainIndexingPendingProposal(Hash blockHash, CrossChainIndexingPendingProposal crossChainIndexingProposal)
         {
-            _indexedCrossChainBlockData[blockHash] = crossChainTransactionInput;
+            _indexedCrossChainBlockData[blockHash] = crossChainIndexingProposal;
         }
 
-        public CrossChainTransactionInput GetTransactionInputForBlockMining(Hash blockHash)
+        public CrossChainIndexingPendingProposal GetCrossChainIndexingPendingProposal(Hash blockHash)
         {
             return _indexedCrossChainBlockData.TryGetValue(blockHash, out var crossChainBlockData)
                 ? crossChainBlockData

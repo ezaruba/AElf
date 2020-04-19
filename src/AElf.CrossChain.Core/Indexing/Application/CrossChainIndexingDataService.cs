@@ -3,15 +3,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using Acs7;
 using AElf.Contracts.CrossChain;
-using AElf.Contracts.Parliament;
 using AElf.CrossChain.Cache.Application;
 using AElf.CrossChain.Indexing.Infrastructure;
-using AElf.CSharp.Core.Extension;
 using AElf.Kernel;
 using AElf.Kernel.SmartContract.Application;
-using AElf.Kernel.Txn.Application;
 using AElf.Types;
-using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Logging;
 
@@ -20,7 +16,6 @@ namespace AElf.CrossChain.Indexing.Application
     internal class CrossChainIndexingDataService : ICrossChainIndexingDataService
     {
         private readonly IBlockCacheEntityConsumer _blockCacheEntityConsumer;
-        private readonly ITransactionInputForBlockMiningDataProvider _transactionInputForBlockMiningDataProvider;
         private readonly IIrreversibleBlockStateProvider _irreversibleBlockStateProvider;
 
         private readonly IContractReaderFactory<CrossChainContractContainer.CrossChainContractStub>
@@ -34,19 +29,17 @@ namespace AElf.CrossChain.Indexing.Application
             _smartContractAddressService.GetAddressByContractName(CrossChainSmartContractAddressNameProvider.Name);
 
         public CrossChainIndexingDataService(IBlockCacheEntityConsumer blockCacheEntityConsumer,
-            ITransactionInputForBlockMiningDataProvider transactionInputForBlockMiningDataProvider,
             IIrreversibleBlockStateProvider irreversibleBlockStateProvider,
             IContractReaderFactory<CrossChainContractContainer.CrossChainContractStub> contractReaderFactory,
             ISmartContractAddressService smartContractAddressService)
         {
             _blockCacheEntityConsumer = blockCacheEntityConsumer;
-            _transactionInputForBlockMiningDataProvider = transactionInputForBlockMiningDataProvider;
             _irreversibleBlockStateProvider = irreversibleBlockStateProvider;
             _contractReaderFactory = contractReaderFactory;
             _smartContractAddressService = smartContractAddressService;
         }
 
-        private async Task<List<SideChainBlockData>> GetNonIndexedSideChainBlockDataAsync(Hash blockHash,
+        public async Task<List<SideChainBlockData>> GetNonIndexedSideChainBlockDataAsync(Hash blockHash,
             long blockHeight)
         {
             var sideChainBlockDataList = new List<SideChainBlockData>();
@@ -127,7 +120,7 @@ namespace AElf.CrossChain.Indexing.Application
             return sideChainBlockDataList;
         }
 
-        private async Task<List<ParentChainBlockData>> GetNonIndexedParentChainBlockDataAsync(Hash blockHash,
+        public async Task<List<ParentChainBlockData>> GetNonIndexedParentChainBlockDataAsync(Hash blockHash,
             long blockHeight)
         {
             var parentChainBlockDataList = new List<ParentChainBlockData>();
@@ -212,92 +205,96 @@ namespace AElf.CrossChain.Indexing.Application
             return indexedSideChainBlockData;
         }
 
-        /// <summary>
-        /// This method returns serialization input for cross chain proposing method.
-        /// </summary>
-        /// <param name="blockHash"></param>
-        /// <param name="blockHeight"></param>
-        /// <param name="from"></param>
-        /// <returns></returns>
-        public async Task<CrossChainTransactionInput> GetCrossChainTransactionInputForNextMiningAsync(Hash blockHash,
-            long blockHeight, Address from)
-        {
-            var inputForNextMining =
-                _transactionInputForBlockMiningDataProvider.GetTransactionInputForBlockMining(blockHash);
-            var proposal = inputForNextMining.PendingProposalInfo;
+        // /// <summary>
+        // /// This method returns serialization input for cross chain proposing method.
+        // /// </summary>
+        // /// <param name="blockHash"></param>
+        // /// <param name="blockHeight"></param>
+        // /// <param name="from"></param>
+        // /// <returns></returns>
+        // public async Task<CrossChainTransactionInput> GetCrossChainTransactionInputForNextMiningAsync(Hash blockHash,
+        //     long blockHeight, Address from)
+        // {
+        //     CrossChainTransactionInput inputForNextMining = null;
+        //     var proposal = _transactionInputForBlockMiningDataProvider.GetTransactionInputForBlockMining(blockHash)
+        //         .PendingProposalInfo;
+        //
+        //     if (proposal == null || proposal.IsExpired)
+        //     {
+        //         // propose new cross chain indexing data if pending proposal is null or expired 
+        //         var crossChainBlockData = await GetCrossChainBlockDataForNextMining(blockHash, blockHeight);
+        //         if (!crossChainBlockData.IsNullOrEmpty())
+        //         {
+        //             inputForNextMining = new CrossChainTransactionInput
+        //             {
+        //                 MethodName =
+        //                     nameof(CrossChainContractContainer.CrossChainContractStub.ProposeCrossChainIndexing),
+        //                 Value = crossChainBlockData.ToByteString()
+        //             };
+        //         }
+        //     }
+        //     else if (proposal.ToBeReleased)
+        //     {
+        //         inputForNextMining = new CrossChainTransactionInput
+        //         {
+        //             MethodName =
+        //                 nameof(CrossChainContractContainer.CrossChainContractStub.ReleaseCrossChainIndexing),
+        //             Value = proposal.ProposalId.ToByteString()
+        //         };
+        //     }
+        //
+        //     return inputForNextMining;
+        // }
 
+        // public async Task<bool> CheckExtraDataIsNeededAsync(Hash blockHash, long blockHeight, Timestamp timestamp)
+        // {
+        //     var pendingProposal = await GetPendingCrossChainIndexingProposalAsync(blockHash, blockHeight, timestamp);
+        //     return pendingProposal != null && pendingProposal.ToBeReleased && pendingProposal.ExpiredTime > timestamp;
+        // }
 
-            if (!CheckProposalExpired(proposal, utcNow)) 
-                return null;
-            // propose new cross chain indexing data if pending proposal is null or expired 
-            var crossChainBlockData = await GetCrossChainBlockDataForNextMining(blockHash, blockHeight);
-                    
-            return new CrossChainTransactionInput
-            {
-                PreviousBlockHeight = blockHeight,
-                MethodName =
-                    nameof(CrossChainContractContainer.CrossChainContractStub.ProposeCrossChainIndexing),
-                Value = crossChainBlockData.ToByteString()
-            };
-        }
+        // public async Task<ByteString> PrepareExtraDataForNextMiningAsync(Hash blockHash, long blockHeight)
+        // {
+        //     var utcNow = TimestampHelper.GetUtcNow();
+        //     var pendingProposal = await GetPendingCrossChainIndexingProposalAsync(blockHash, blockHeight, utcNow);
+        //
+        //
+        //     var crossChainTransactionInput = new CrossChainIndexingPendingProposal()
+        //     {
+        //         PreviousBlockHeight = blockHeight
+        //     };
+        //
+        //     if (pendingProposal == null)
+        //     {
+        //         _transactionInputForBlockMiningDataProvider.AddTransactionInputForBlockMining(blockHash,
+        //             crossChainTransactionInput);
+        //         return ByteString.Empty;
+        //     }
+        //
+        //     var proposalDto = new CrossChainIndexingPendingProposalDto
+        //     {
+        //         ExpiredTime = pendingProposal.ExpiredTime,
+        //         Proposer = pendingProposal.Proposer,
+        //         ProposalId = pendingProposal.ProposalId,
+        //         ToBeReleased = pendingProposal.ToBeReleased,
+        //         IsExpired = pendingProposal.ExpiredTime.AddMilliseconds(500) <= utcNow
+        //     };
+        //     crossChainTransactionInput.PendingProposalInfo = proposalDto;
+        //     _transactionInputForBlockMiningDataProvider.AddTransactionInputForBlockMining(blockHash,
+        //         crossChainTransactionInput);
+        //
+        //     if (proposalDto.IsExpired || !pendingProposal.ToBeReleased)
+        //         return ByteString.Empty;
+        //
+        //     // release pending proposal and unable to propose anything if it is ready
+        //     Logger.LogInformation("Cross chain extra data generated.");
+        //     return pendingProposal.ProposedCrossChainBlockData.ExtractCrossChainExtraDataFromCrossChainBlockData();
+        // }
 
-        public async Task<bool> CheckExtraDataIsNeededAsync(Hash blockHash, long blockHeight, Timestamp timestamp)
-        {
-            var pendingProposal = await GetPendingCrossChainIndexingProposalAsync(blockHash, blockHeight, timestamp);
-            return pendingProposal != null && pendingProposal.ToBeReleased && pendingProposal.ExpiredTime > timestamp;
-        }
-
-        public async Task<ByteString> PrepareExtraDataForNextMiningAsync(Hash blockHash, long blockHeight)
-        {
-            var utcNow = TimestampHelper.GetUtcNow();
-            var pendingProposal = await GetPendingCrossChainIndexingProposalAsync(blockHash, blockHeight, utcNow);
-
-            if (CheckProposalExpired(pendingProposal, utcNow))
-            {
-                // propose new cross chain indexing data if pending proposal is null or expired 
-                var crossChainBlockData = await GetCrossChainBlockDataForNextMining(blockHash, blockHeight);
-                if (!crossChainBlockData.IsNullOrEmpty())
-                    _transactionInputForBlockMiningDataProvider.AddTransactionInputForBlockMining(blockHash,
-                        new CrossChainTransactionInput
-                        {
-                            PreviousBlockHeight = blockHeight,
-                            MethodName =
-                                nameof(CrossChainContractContainer.CrossChainContractStub.ProposeCrossChainIndexing),
-                            Value = crossChainBlockData.ToByteString()
-                        });
-                return ByteString.Empty;
-            }
-
-            var proposalDto = new CrossChainIndexingPendingProposalDto();
-            if (CheckProposalExpired(pendingProposal, utcNow) || pendingProposal.ToBeReleased)
-                return ByteString.Empty;
-
-            // release pending proposal and unable to propose anything if it is ready
-            _transactionInputForBlockMiningDataProvider.AddTransactionInputForBlockMining(blockHash,
-                new CrossChainTransactionInput
-                {
-                    PreviousBlockHeight = blockHeight,
-                    // MethodName =
-                    //     nameof(CrossChainContractContainer.CrossChainContractStub.ReleaseCrossChainIndexing),
-                    // Value = pendingProposal.ProposalId.ToByteString(),
-                    PendingProposalInfo = 
-                    {
-                        ExpiredTime = pendingProposal.ExpiredTime,
-                        Proposer = pendingProposal.Proposer,
-                        ProposalId = pendingProposal.ProposalId,
-                        ToBeReleased = pendingProposal.ToBeReleased,
-                        IsExpired = false
-                    }
-                });
-            Logger.LogInformation("Cross chain extra data generated.");
-            return pendingProposal.ProposedCrossChainBlockData.ExtractCrossChainExtraDataFromCrossChainBlockData();
-        }
-
-        public void UpdateCrossChainDataWithLib(Hash blockHash, long blockHeight)
-        {
-            // clear useless cache
-            _transactionInputForBlockMiningDataProvider.ClearExpiredTransactionInput(blockHeight);
-        }
+        // public void UpdateCrossChainDataWithLib(Hash blockHash, long blockHeight)
+        // {
+        //     // clear useless cache
+        //     _transactionInputForBlockMiningDataProvider.ClearExpiredTransactionInput(blockHeight);
+        // }
 
         public async Task<ChainInitializationData> GetChainInitializationDataAsync(int chainId)
         {
@@ -336,22 +333,22 @@ namespace AElf.CrossChain.Indexing.Application
                 .CallAsync(new Empty());
         }
 
-        private async Task<CrossChainBlockData> GetCrossChainBlockDataForNextMining(Hash blockHash,
-            long blockHeight)
-        {
-            var sideChainBlockData = await GetNonIndexedSideChainBlockDataAsync(blockHash, blockHeight);
-            var parentChainBlockData = await GetNonIndexedParentChainBlockDataAsync(blockHash, blockHeight);
+        // private async Task<CrossChainBlockData> GetCrossChainBlockDataForNextMining(Hash blockHash,
+        //     long blockHeight)
+        // {
+        //     var sideChainBlockData = await GetNonIndexedSideChainBlockDataAsync(blockHash, blockHeight);
+        //     var parentChainBlockData = await GetNonIndexedParentChainBlockDataAsync(blockHash, blockHeight);
+        //
+        //     var crossChainBlockData = new CrossChainBlockData
+        //     {
+        //         PreviousBlockHeight = blockHeight,
+        //         ParentChainBlockDataList = {parentChainBlockData},
+        //         SideChainBlockDataList = {sideChainBlockData}
+        //     };
+        //     return crossChainBlockData;
+        // }
 
-            var crossChainBlockData = new CrossChainBlockData
-            {
-                PreviousBlockHeight = blockHeight,
-                ParentChainBlockDataList = {parentChainBlockData},
-                SideChainBlockDataList = {sideChainBlockData}
-            };
-            return crossChainBlockData;
-        }
-
-        private async Task<GetPendingCrossChainIndexingProposalOutput> GetPendingCrossChainIndexingProposalAsync(
+        public async Task<PendingCrossChainIndexingProposalDto> GetPendingCrossChainIndexingProposalAsync(
             Hash blockHash, long blockHeight, Timestamp timestamp, Address from = null)
         {
             var pendingProposal = await _contractReaderFactory
@@ -364,12 +361,14 @@ namespace AElf.CrossChain.Indexing.Application
                     Sender = from
                 })
                 .GetPendingCrossChainIndexingProposal.CallAsync(new Empty());
-            return pendingProposal;
-        }
-
-        private bool CheckProposalExpired(GetPendingCrossChainIndexingProposalOutput proposalInfo, Timestamp timestamp)
-        {
-            return proposalInfo == null || proposalInfo.ExpiredTime.AddMilliseconds(500) <= timestamp;
+            return new PendingCrossChainIndexingProposalDto
+            {
+                Proposer = pendingProposal.Proposer,
+                ProposalId = pendingProposal.ProposalId,
+                ToBeReleased = pendingProposal.ToBeReleased,
+                ExpiredTime = pendingProposal.ExpiredTime,
+                ProposedCrossChainBlockData = pendingProposal.ProposedCrossChainBlockData
+            };
         }
     }
 }

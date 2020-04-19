@@ -1,9 +1,8 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Acs7;
-using AElf.CrossChain.Indexing.Infrastructure;
 using AElf.Kernel;
 using AElf.Types;
-using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 
 namespace AElf.CrossChain.Indexing.Application
@@ -14,17 +13,24 @@ namespace AElf.CrossChain.Indexing.Application
 
         Task<IndexedSideChainBlockData> GetIndexedSideChainBlockDataAsync(Hash blockHash, long blockHeight);
 
-        Task<CrossChainTransactionInput> GetCrossChainTransactionInputForNextMiningAsync(Hash blockHash,
-            long blockHeight);
+        Task<List<SideChainBlockData>> GetNonIndexedSideChainBlockDataAsync(Hash blockHash, long blockHeight);
 
-        Task<bool> CheckExtraDataIsNeededAsync(Hash blockHash, long blockHeight, Timestamp timestamp);
+        Task<List<ParentChainBlockData>> GetNonIndexedParentChainBlockDataAsync(Hash blockHash, long blockHeight);
 
-        Task<ByteString> PrepareExtraDataForNextMiningAsync(Hash blockHash, long blockHeight);
-
-        // ByteString ExtractCrossChainExtraDataFromCrossChainBlockData(CrossChainBlockData crossChainBlockData);
-        void UpdateCrossChainDataWithLib(Hash blockHash, long blockHeight);
         Task<SideChainIdAndHeightDict> GetAllChainIdHeightPairsAtLibAsync();
         Task<ChainInitializationData> GetChainInitializationDataAsync(int chainId);
         Task<Block> GetNonIndexedBlockAsync(long requestHeight);
+
+        Task<PendingCrossChainIndexingProposalDto> GetPendingCrossChainIndexingProposalAsync(Hash blockHash,
+            long blockHeight, Timestamp timestamp, Address from = null);
+    }
+
+    public class PendingCrossChainIndexingProposalDto
+    {
+        public Hash ProposalId { get; set; }
+        public Address Proposer { get; set; }
+        public bool ToBeReleased { get; set; }
+        public CrossChainBlockData ProposedCrossChainBlockData { get; set; }
+        public Timestamp ExpiredTime { get; set; }
     }
 }

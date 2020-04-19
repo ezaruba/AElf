@@ -17,18 +17,20 @@ namespace AElf.CrossChain.Application
         private readonly ICrossChainRequestService _crossChainRequestService;
         private readonly IBlockExtraDataService _blockExtraDataService;
         private readonly ISmartContractAddressService _smartContractAddressService;
+        private readonly ICrossChainService _crossChainService;
 
         public ILocalEventBus LocalEventBus { get; set; }
         public ILogger<CrossChainValidationProvider> Logger { get; set; }
 
         public CrossChainValidationProvider(ICrossChainIndexingDataService crossChainIndexingDataService,
             IBlockExtraDataService blockExtraDataService, ISmartContractAddressService smartContractAddressService,
-            ICrossChainRequestService crossChainRequestService)
+            ICrossChainRequestService crossChainRequestService, ICrossChainService crossChainService)
         {
             _crossChainIndexingDataService = crossChainIndexingDataService;
             _blockExtraDataService = blockExtraDataService;
             _smartContractAddressService = smartContractAddressService;
             _crossChainRequestService = crossChainRequestService;
+            _crossChainService = crossChainService;
             LocalEventBus = NullLocalEventBus.Instance;
         }
 
@@ -36,7 +38,7 @@ namespace AElf.CrossChain.Application
         {
             var extraData = ExtractCrossChainExtraData(block.Header);
             if (!extraData.IsNullOrEmpty())
-                return await _crossChainIndexingDataService.CheckExtraDataIsNeededAsync(block.Header.PreviousBlockHash,
+                return await _crossChainService.CheckExtraDataIsNeededAsync(block.Header.PreviousBlockHash,
                     block.Header.Height - 1, block.Header.Time); 
             return true;
         }

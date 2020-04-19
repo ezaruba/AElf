@@ -1,4 +1,5 @@
 using AElf.CrossChain.Application;
+using AElf.CrossChain.Infrastructure;
 using AElf.Kernel;
 using AElf.Kernel.Blockchain.Application;
 using AElf.Kernel.Miner.Application;
@@ -23,6 +24,7 @@ namespace AElf.CrossChain
             context.Services.AddSingleton<ITransactionValidationProvider, TxHubEntryPermissionValidationProvider>();
             context.Services.AddSingleton<IChainInitializationDataPlugin, CrossChainPlugin>();
             context.Services.AddSingleton<INodePlugin, CrossChainPlugin>();
+            context.Services.AddSingleton<ICrossChainIndexingProposalProvider, CrossChainIndexingProposalProvider>();
         }
     }
 }

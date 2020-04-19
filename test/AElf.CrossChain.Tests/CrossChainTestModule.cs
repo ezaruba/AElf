@@ -1,12 +1,11 @@
 using System.Threading.Tasks;
-using Acs7;
 using AElf.CrossChain.Application;
 using AElf.CrossChain.Indexing.Application;
 using AElf.Kernel;
 using AElf.Kernel.SmartContract;
 using AElf.Modularity;
 using AElf.Types;
-using Google.Protobuf;
+using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Volo.Abp.Modularity;
@@ -45,27 +44,29 @@ namespace AElf.CrossChain
                     });
 
                 mockCrossChainIndexingDataService.Setup(m =>
-                        m.GetCrossChainTransactionInputForNextMiningAsync(It.IsAny<Hash>(), It.IsAny<long>()))
-                    .Returns<Hash, long>(
-                        (previousHash, height) =>
-                        {
-                            var crossChainTestHelper =
-                                context.Services.GetRequiredServiceLazy<CrossChainTestHelper>().Value;
-                            return Task.FromResult(crossChainTestHelper.GetCrossChainBlockData(previousHash));
-                        });
-
+                    m.GetPendingCrossChainIndexingProposalAsync(It.IsAny<Hash>(), It.IsAny<long>(), It.IsAny<Timestamp>(), It.IsAny<Address>())).Returns(() =>
+                {
+                    var crossChainTestHelper =
+                        context.Services.GetRequiredServiceLazy<CrossChainTestHelper>().Value;
+                    return Task.FromResult(crossChainTestHelper.GetFakePendingCrossChainIndexingProposal());
+                });
+                
                 mockCrossChainIndexingDataService.Setup(m =>
-                        m.PrepareExtraDataForNextMiningAsync(It.IsAny<Hash>(), It.IsAny<long>()))
-                    .Returns<Hash, long>(
-                        (previousHash, height) =>
-                        {
-                            var crossChainTestHelper =
-                                context.Services.GetRequiredServiceLazy<CrossChainTestHelper>().Value;
-                            return Task.FromResult(
-                                crossChainTestHelper.GetCrossChainExtraData(previousHash)?.ToByteString() ??
-                                ByteString.Empty);
-                        });
-
+                    m.GetNonIndexedSideChainBlockDataAsync(It.IsAny<Hash>(), It.IsAny<long>())).Returns(() =>
+                {
+                    var crossChainTestHelper =
+                        context.Services.GetRequiredServiceLazy<CrossChainTestHelper>().Value;
+                    return Task.FromResult(crossChainTestHelper.GetSideChainBlockDataList());
+                });
+                
+                mockCrossChainIndexingDataService.Setup(m =>
+                    m.GetNonIndexedParentChainBlockDataAsync(It.IsAny<Hash>(), It.IsAny<long>())).Returns(() =>
+                {
+                    var crossChainTestHelper =
+                        context.Services.GetRequiredServiceLazy<CrossChainTestHelper>().Value;
+                    return Task.FromResult(crossChainTestHelper.GetParentChainBlockDataList());
+                });
+                
                 mockCrossChainIndexingDataService.Setup(m =>
                     m.GetAllChainIdHeightPairsAtLibAsync()).Returns(() =>
                 {

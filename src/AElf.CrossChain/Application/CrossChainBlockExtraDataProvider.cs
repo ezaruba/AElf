@@ -10,13 +10,13 @@ namespace AElf.CrossChain.Application
 {
     internal class CrossChainBlockExtraDataProvider : IBlockExtraDataProvider
     {
-        private readonly ICrossChainIndexingDataService _crossChainIndexingDataService;
+        private readonly ICrossChainService _crossChainService;
         private readonly TransactionPackingOptions _transactionPackingOptions;
 
-        public CrossChainBlockExtraDataProvider(ICrossChainIndexingDataService crossChainIndexingDataService,
-            IOptionsMonitor<TransactionPackingOptions> transactionPackingOptions)
+        public CrossChainBlockExtraDataProvider(IOptionsMonitor<TransactionPackingOptions> transactionPackingOptions, 
+            ICrossChainService crossChainService)
         {
-            _crossChainIndexingDataService = crossChainIndexingDataService;
+            _crossChainService = crossChainService;
             _transactionPackingOptions = transactionPackingOptions.CurrentValue;
         }
 
@@ -28,7 +28,7 @@ namespace AElf.CrossChain.Application
             if (!_transactionPackingOptions.IsTransactionPackable)
                 return ByteString.Empty;
 
-            var bytes = await _crossChainIndexingDataService.PrepareExtraDataForNextMiningAsync(
+            var bytes = await _crossChainService.GenerateExtraDataAsync(
                 blockHeader.PreviousBlockHash, blockHeader.Height - 1);
 
             return bytes;
