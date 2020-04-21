@@ -76,7 +76,8 @@ namespace AElf.CrossChain
             transactions[0].From.ShouldBe(SampleAddress.AddressList[0]);
             transactions[0].To.ShouldBeNull();
             transactions[0].RefBlockNumber.ShouldBe(previousBlockHeight);
-            transactions[0].RefBlockPrefix.ShouldBe(ByteString.CopyFrom(previousBlockHash.Value.Take(4).ToArray()));
+            
+            transactions[0].RefBlockPrefix.ShouldBe(BlockHelper.GetRefBlockPrefix(previousBlockHash));
             transactions[0].MethodName
                 .ShouldBe(nameof(CrossChainContractContainer.CrossChainContractStub.ProposeCrossChainIndexing));
 
